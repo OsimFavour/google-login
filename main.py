@@ -66,7 +66,7 @@ def logout():
 
 @app.route("/")
 def index():
-    return "Hello World <a href='/login'><button>Login</buton></a>"
+    return "Hello World <a href='/login'><button>Login</button></a>"
 
 @app.route("/protected_area")
 @login_is_required
