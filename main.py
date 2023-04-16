@@ -5,37 +5,55 @@ from cachecontrol.wrapper import CacheControl
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
-from flask import Flask, abort, session, redirect, request
+from flask import Flask, abort, redirect, render_template, request, session
+from forms import LoginForm
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "herjfmqwd03i2ru3jkfqcdd9302pjd"
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-GOOGLE_CLIENT_ID = "931067967702-hgr1u7l6v1ldcq769md1j8h6ijhljkdt.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "635446910036-1qif2dq6etue3iq01ur88hvcgjsv2vhp.apps.googleusercontent.com"
+REDIRECT_URI = "http://127.0.0.1:5000/callback"
+
 client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
 
 
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
     scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.profile", "openid"],
-    redirect_uri="http://127.0.0.1:5000/callback"
+    redirect_uri=REDIRECT_URI
     )
 
 
+# def login_is_required(function):
+#     def wrapper(*args, **kwargs):
+#         if "google_id" not in session:
+#             return abort(401)
+#         else:
+#             return function()
+#     return wrapper
+
+
 def login_is_required(function):
-    def wrapper(*args, **kwargs):
+    @wraps(function)
+    def google_wrapper(*args, **kwargs):
         if "google_id" not in session:
-            return abort(401)
+            return redirect("/login")
         else:
             return function()
-    return wrapper
+    return google_wrapper
 
-@app.route("/login")
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    authorization_url, state = flow.authorization_url()
-    session["state"] = state
-    return redirect(authorization_url)
+    if request.method == "POST":
+        authorization_url, state = flow.authorization_url()
+        session["state"] = state
+        print(state)
+        return redirect(authorization_url)
+
 
 @app.route("/callback")
 def callback():
@@ -66,7 +84,11 @@ def logout():
 
 @app.route("/")
 def index():
-    return "Hello World <a href='/login'><button>Login</button></a>"
+    form = LoginForm()
+    # return "Hello World <a href='/login'><button>Login</button></a>"
+    return render_template("index.html", form=form)
+   
+
 
 @app.route("/protected_area")
 @login_is_required
