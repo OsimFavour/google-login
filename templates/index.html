@@ -71,15 +71,15 @@
   <body class="text-center">
     
 <main class="form-signin w-50 m-auto mt-5">
-  <form>
+  <form method="POST" action="{{ url_for('user_login') }}">
     <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
 
     <div class="form-floating">
-      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com">
+      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="email">
       <label for="floatingInput">Email address</label>
     </div>
     <div class="form-floating">
-      <input type="password" class="form-control" id="floatingPassword" placeholder="Password">
+      <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="password">
       <label for="floatingPassword">Password</label>
     </div>
 
@@ -101,10 +101,7 @@
         </a>
         <p class="mt-5 mb-3 text-muted">&copy; 2017-2022</p>
     </form>
-        {% if session.google_id %}
-        <p>You are logged in as {{ session.name }}.</p>
-        <p><a href="/protected_area">Go to protected area</p>
-            {% endif %}
+        
 </main>
 
 
