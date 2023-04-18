@@ -17,7 +17,7 @@
 
     <div class="login-card card card-body form-signin w-100">
 
-        <form method="POST", action="">
+        <form method="POST" action="">
             <h1 class="h3 mb-4 mx-4 fw-normal">Please sign in.</h1>
             {{ form.hidden_tag() }}
             
@@ -54,6 +54,7 @@
             <div>
                 <button class="w-100 button btn-lg btn-primary me-6 mb-2 mx-auto" type="submit"><div class="sign-in">Sign in</div></button>
             </div>
+
             
             <div class="w-100">
                 <a href="{{ url_for('index') }}">
