@@ -1,4 +1,4 @@
-"""Can I have a simple code to login google authenticated users in my flask website also creating a database for them.
+"""Can I have a simple code to login google authenticated users in my flask website also creating a database for them?
    Sure, here's a simple example code that uses Flask-Login for user authentication and SQLAlchemy for database 
    operations. This assumes that you have already created a Google API project and have obtained the client ID and
    client secret.
