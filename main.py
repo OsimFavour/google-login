@@ -13,6 +13,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "herjfmqwd03i2ru3jkfqcdd9302pjd"
+app.app_context().push()
 
 
 ## CREATE DATABASE
@@ -21,9 +22,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-login_manager = LoginManager(app)
+# login_manager = LoginManager(app)
 
-app.app_context().push()
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
@@ -54,9 +54,9 @@ class User(db.Model):
 db.create_all()
 
 # Load user from User ID
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 
 def login_is_required(function):
@@ -70,7 +70,7 @@ def login_is_required(function):
 
 
 @app.route("/")
-@login_is_required
+# @login_is_required
 def home():
     all_users = User.query.all()
     return render_template("home.html", users=all_users)
@@ -96,7 +96,6 @@ def user_login():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-
         new_user = User(email=email, password=password)
         print(new_user)
         db.session.add(new_user)
@@ -112,6 +111,8 @@ def login():
         session["state"] = state
         print(state)
         return redirect(authorization_url)
+    # return render_template("home.html")
+    return redirect(url_for("home"))
 
 
 @app.route("/callback")
@@ -131,20 +132,21 @@ def callback():
         request=token_request,
         audience=GOOGLE_CLIENT_ID
     )
-    # This is the original code, but I am commenting it primarily
     # session["google_id"] = id_info.get("sub")
     # session["name"] = id_info.get("name")
+    user = User.query.filter_by(id=id_info['sub']).first()
     if user is None:
-        user = User.query.filter_by(id=id_info["sub"])
+        user = User(id=id_info['sub'])
         db.session.add(user)
         db.session.commit()
+  
     return redirect("/")
 
 
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/")
+    return redirect("/protected_area")
    
 
 
