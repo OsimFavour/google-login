@@ -5,6 +5,8 @@ from cachecontrol.wrapper import CacheControl
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
+from google.auth.exceptions import InvalidValue
+from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from flask import Flask, abort, redirect, render_template, url_for, request, session
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
@@ -127,18 +129,49 @@ def callback():
     cached_session = CacheControl(request_session)
     token_request = Request(session=cached_session)
 
-    id_info = id_token.verify_oauth2_token(
-        id_token=credentials._id_token,
-        request=token_request,
-        audience=GOOGLE_CLIENT_ID
-    )
+    try:
+        id_info = id_token.verify_oauth2_token(
+            id_token=credentials._id_token,
+            request=token_request,
+            audience=GOOGLE_CLIENT_ID
+        )
+    except InvalidValue as e:
+        if "Token expired" in str(e):
+            flow.fetch_token(authorization_response=request.url)
+            credentials = flow.credentials
+            id_info = id_token.verify_oauth2_token(
+                id_token=credentials._id_token, 
+                request=token_request,
+                audience=GOOGLE_CLIENT_ID
+            )
+        else:
+            raise e
+    except InvalidGrantError:
+        # The authorization code or refresh token is invalid, try to refresh the token
+        try:
+            flow.credentials.refresh(Request())
+        except TokenExpiredError:
+            # The token has expired, redirect the user to the authorization flow
+            auth_url, _ = flow.authorization_url(prompt='consent')
+            return redirect(auth_url)
     # session["google_id"] = id_info.get("sub")
     # session["name"] = id_info.get("name")
-    user = User.query.filter_by(id=id_info['sub']).first()
+    
+    # Check if user already exit in database
+    user = User.query.filter_by(email=id_info['email']).first()
+    
     if user is None:
-        user = User(id=id_info['sub'])
+        # Create new user object
+        user = User(email=id_info['email'])
         db.session.add(user)
-        db.session.commit()
+        # db.session.commit()
+        
+    # Update user object with new data
+    user.google_id = id_info["sub"]
+    user.name = id_info["name"]
+    # user.picture = id_info["picture"]
+    
+    db.session.commit()
   
     return redirect("/")
 
