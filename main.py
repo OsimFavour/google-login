@@ -1,14 +1,13 @@
 import os
 import pathlib
 import requests
+import secrets
+import string
 from cachecontrol.wrapper import CacheControl
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
-from google.auth.exceptions import InvalidValue
-from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 from flask import Flask, abort, redirect, render_template, url_for, request, session
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from forms import LoginForm
 from functools import wraps
@@ -24,9 +23,6 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# login_manager = LoginManager(app)
-
-
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 GOOGLE_CLIENT_ID = "635446910036-1qif2dq6etue3iq01ur88hvcgjsv2vhp.apps.googleusercontent.com"
@@ -37,16 +33,17 @@ client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret
 
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
-    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.profile", "openid"],
+    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
     redirect_uri=REDIRECT_URI
     )
 
 
 ## CREATE TABLE
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, unique=True)
     email = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.String(250), nullable=False)
+    google_id = db.Column(db.String(50), unique=True, nullable=True)
 
     def __repr__(self):
         return f"<User {self.email}>"
@@ -55,17 +52,11 @@ class User(db.Model):
 
 db.create_all()
 
-# Load user from User ID
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.query.get(int(user_id))
-
-
 def login_is_required(function):
     @wraps(function)
     def google_wrapper(*args, **kwargs):
         if "google_id" not in session:
-            return redirect("/login")
+            abort(400)
         else:
             return function()
     return google_wrapper
@@ -77,20 +68,6 @@ def home():
     all_users = User.query.all()
     return render_template("home.html", users=all_users)
 
-
-# @app.route("/user-login", methods=["GET", "POST"])
-# def user_login():
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         email = form.emails.data
-#         password = form.passwords.data
-
-#         new_user = User(email=email, password=password)
-#         print(new_user)
-#         db.session.add(new_user)
-#         db.session.commit()
-#         return redirect(url_for("home"))
-#     return render_template("index.html", title="Login", form=form)
 
 @app.route("/user-login", methods=["GET", "POST"])
 def user_login():
@@ -113,7 +90,6 @@ def login():
         session["state"] = state
         print(state)
         return redirect(authorization_url)
-    # return render_template("home.html")
     return redirect(url_for("home"))
 
 
@@ -122,7 +98,7 @@ def callback():
     flow.fetch_token(authorization_response=request.url)
 
     if not session["state"] == request.args["state"]:
-        abort(500)  # State does not match!
+        abort(500) 
 
     credentials = flow.credentials
     request_session = requests.session()
@@ -135,25 +111,20 @@ def callback():
         request=token_request,
         audience=GOOGLE_CLIENT_ID
     )
-    # session["google_id"] = id_info.get("sub")
-    # session["name"] = id_info.get("name")
-    
-    # Check if user already exit in database
+    print(id_info)
+
     user = User.query.filter_by(email=id_info['email']).first()
     
+    alphabet = string.ascii_letters + string.digits  # Define the set of characters to choose from
+    password = ''.join(secrets.choice(alphabet) for i in range(12))  # Generate a random string of length 12
+    print(password)
+
     if user is None:
-        # Create new user object
-        user = User(email=id_info['email'])
+        user = User(google_id=id_info["sub"], email=id_info['email'], password=password)
         db.session.add(user)
-        # db.session.commit()
-        
-    # Update user object with new data
+   
     user.google_id = id_info["sub"]
-    user.name = id_info["name"]
-    # user.picture = id_info["picture"]
-    
     db.session.commit()
-  
     return redirect("/")
 
 
@@ -161,8 +132,6 @@ def callback():
 def logout():
     session.clear()
     return redirect("/protected_area")
-   
-
 
 @app.route("/protected_area")
 @login_is_required
