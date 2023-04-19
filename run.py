@@ -50,26 +50,25 @@ def login_is_required(function):
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": GOOGLE_CLIENT_ID,
-                    "client_secret": GOOGLE_CLIENT_SECRET,
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "redirect_uris": [REDIRECT_URI],
-                    "javascript_origins": [JAVASCRIPT_ORIGINS],
-                }
-            },
-            scopes=["openid", "email", "profile"],
-        )
-        authorization_url, state = flow.authorization_url(
-            access_type="offline", prompt="consent"
-        )
-        session["state"] = state
-        return redirect(authorization_url)
-
+    # if request.method == "POST":
+    flow = Flow.from_client_config(
+        {
+            "web": {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "redirect_uris": [REDIRECT_URI],
+                "javascript_origins": [JAVASCRIPT_ORIGINS],
+            }
+        },
+        scopes=["openid", "email", "profile"],
+    )
+    authorization_url, state = flow.authorization_url(
+        access_type="offline", prompt="consent"
+    )
+    session["state"] = state
+    return redirect(authorization_url)
 
 
 @app.route("/callback")
@@ -100,6 +99,7 @@ def callback():
     idinfo = id_token.verify_oauth2_token(
         flow.credentials.id_token, Request(), GOOGLE_CLIENT_ID
     )
+    print(idinfo)
 
     # Store the user's profile information in the session
     session["google_id"] = {
@@ -117,19 +117,18 @@ def logout():
 
 @app.route("/")
 def index():
-    form = LoginForm()
-    # return "Hello World <a href='/login'><button>Login</button></a>"
+    # form = LoginForm()
+    return "Hello World <a href='/login'><button>Login</button></a>"
 	# return """
     # <form action="/login">
     #     <button type="submit">Log in with Google</button>
     # </form>
     # """
-    return render_template("index.html", form=form)
+    # return render_template("index.html", form=form)
     
 
-
 @app.route("/protected_area")
-@login_is_required
+# @login_is_required
 def protected_area():
     return "Protected Area Here! <a href='/logout'><button>Logout</buton></a>"
 
