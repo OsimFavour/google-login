@@ -129,31 +129,12 @@ def callback():
     cached_session = CacheControl(request_session)
     token_request = Request(session=cached_session)
 
-    try:
-        id_info = id_token.verify_oauth2_token(
-            id_token=credentials._id_token,
-            request=token_request,
-            audience=GOOGLE_CLIENT_ID
-        )
-    except InvalidValue as e:
-        if "Token expired" in str(e):
-            flow.fetch_token(authorization_response=request.url)
-            credentials = flow.credentials
-            id_info = id_token.verify_oauth2_token(
-                id_token=credentials._id_token, 
-                request=token_request,
-                audience=GOOGLE_CLIENT_ID
-            )
-        else:
-            raise e
-    except InvalidGrantError:
-        # The authorization code or refresh token is invalid, try to refresh the token
-        try:
-            flow.credentials.refresh(Request())
-        except TokenExpiredError:
-            # The token has expired, redirect the user to the authorization flow
-            auth_url, _ = flow.authorization_url(prompt='consent')
-            return redirect(auth_url)
+    
+    id_info = id_token.verify_oauth2_token(
+        id_token=credentials._id_token,
+        request=token_request,
+        audience=GOOGLE_CLIENT_ID
+    )
     # session["google_id"] = id_info.get("sub")
     # session["name"] = id_info.get("name")
     
