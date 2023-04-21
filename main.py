@@ -9,6 +9,7 @@ from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from flask import Flask, abort, redirect, render_template, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from forms import LoginForm
 from functools import wraps
 
@@ -22,6 +23,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user-login.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
@@ -41,6 +44,7 @@ flow = Flow.from_client_secrets_file(
 ## CREATE TABLE
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String(50), nullable=True)
     email = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.String(250), nullable=False)
     google_id = db.Column(db.String(50), unique=True, nullable=True)
@@ -51,6 +55,7 @@ class User(db.Model):
 # db.drop_all()
 
 db.create_all()
+
 
 def login_is_required(function):
     @wraps(function)
@@ -73,9 +78,10 @@ def home():
 def user_login():
     form = LoginForm()
     if request.method == "POST":
+        name = request.form.get("name")
         email = request.form.get("email")
         password = request.form.get("password")
-        new_user = User(email=email, password=password)
+        new_user = User(name=name, email=email, password=password)
         print(new_user)
         db.session.add(new_user)
         db.session.commit()
@@ -120,7 +126,7 @@ def callback():
     print(password)
 
     if user is None:
-        user = User(google_id=id_info["sub"], email=id_info['email'], password=password)
+        user = User(google_id=id_info["sub"], name=id_info['name'], email=id_info['email'], password=password)
         db.session.add(user)
    
     user.google_id = id_info["sub"]
