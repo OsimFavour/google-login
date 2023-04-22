@@ -1,0 +1,21 @@
+.google-signup-btn {
+    background-color: #fff;
+    border: 2px solid #db4437;
+    border-radius: 4px;
+    color: #db4437;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 24px;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .google-signup-btn:hover {
+    background-color: #db4437;
+    color: #fff;
+  }
+  
