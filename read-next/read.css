@@ -1,0 +1,41 @@
+.read-next {
+    margin-top: 50px;
+  }
+  
+  .read-next h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  
+  .read-next .article {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  
+  .read-next .article img {
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    margin-right: 20px;
+  }
+  
+  .read-next .article h3 {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  
+  .read-next .article p {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  .read-next .article a {
+    font-size: 14px;
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .read-next .article a:hover {
+    text-decoration: underline;
+  }
+  
