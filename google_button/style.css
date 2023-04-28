@@ -1,3 +1,7 @@
+/* .sign-in-matters {
+  padding: 12px 24px;
+} */
+
 .google-signup-btn {
     background-color: #fff;
     border: 2px solid #db4437;
@@ -18,4 +22,27 @@
     background-color: #db4437;
     color: #fff;
   }
+
   
+.google-signup-btn img {
+  margin-right: 220px;
+  margin-top: -5px;
+  height: 30px;
+  width: 30px;
+}
+
+img:hover {
+  background-color: #db4437;
+  color: #fff;
+}
+
+/* img {
+  background-color: #fff;
+  margin-top: 10px;
+} */
+
+.sign-up {
+  margin-top: -25px;
+  margin-left: 15px;
+  padding-left: 15px;
+}
